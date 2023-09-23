@@ -1,3 +1,6 @@
+import requests
+import secrets
+
 # Location class that holds a list of keywords
 class Location:
     def __init__(self, name):
@@ -65,11 +68,29 @@ def getLocations():
 
 # Takes in the list of script words and list of locations and compares the words to the keywords to find which location matches more
 def find_ideal_locations(script, location):
+    for place in range(len(location)):
+        for keyword in range(len(location[place].get_keywords())):
+            syn_url = 'https://api.api-ninjas.com/v1/thesaurus?word={}'.format(
+                location[place].get_keywords()[keyword])
+            response = requests.get(syn_url, headers={'X-Api-Key': secrets.token_urlsafe(16)})
+            in_word = False
+            tempWord = ""
+            synonyms = []
+            char = 0
+            while response.text[char] != "]":
+                if response.text[char] == "[":
+                    in_word = True
+                elif response.text[char] == ",":
+                    synonyms.append(tempWord)
+                    tempWord = ""
+                else:
+                    tempWord = tempWord + response.text[char]
+                char = char + 1
     for word in range(len(script)):
         for place in range(len(location)):
-            for keyword in range(len(location[place].get_keywords())):
-                if script[word] == location[place].get_keywords()[keyword]:
-                    location[place].add_value()
+                for syn in range(len(synonyms)):
+                    if response.text[syn] == location[place].get_keywords()[keyword]:
+                        location[place].add_value()
     bestloc = ""
     topscore = 0
     for place in range(len(location)):
