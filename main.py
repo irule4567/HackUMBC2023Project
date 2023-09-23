@@ -7,6 +7,7 @@ class Location:
         self.name = name
         self.keywords = []
         self.keywordValue = 0
+        self.matchingKeywords = []
     def add_keyword(self, keyword):
         self.keywords.append(keyword)
     def get_name(self):
@@ -17,6 +18,10 @@ class Location:
         return self.keywordValue
     def add_value(self):
         self.keywordValue = self.keywordValue + 1
+    def get_matchKey(self):
+        return self.matchingKeywords
+    def add_matchKey(self, matchKey):
+        self.matchingKeywords.append(matchKey)
 
 # Reads in the script and stores each word
 def getScript():
@@ -27,21 +32,20 @@ def getScript():
     tempWord = ""
     for char in range(len(scriptChars)):
         #print(scriptChars[char])
-        if scriptChars[char] == "\n" or scriptChars[char] == "\t" or scriptChars[char] == " ":
+        if scriptChars[char] == "\n" or scriptChars[char] == "\t" or scriptChars[char] == " " or scriptChars[char] == "":
             scriptwords.append(tempWord)
             tempWord = ""
-        elif scriptChars[char] == "":
-            tempWord = tempWord + scriptChars[char]
         else:
             tempWord = tempWord + scriptChars[char]
+    # Tests reading in from .txt file
+    #for word in range(len(scriptwords)):
+    #    print(scriptwords[word])
     return scriptwords
-    #Tests reading in from .txt file
-    #for word in range(len(keywords)):
-    #    print(keywords[word])
+
 
 # Reads in locations and their keywords
 def getLocations():
-    locationstxt = open("Test location+keywords.txt")
+    locationstxt = open("Locations+keywords.txt")
     locations = []
     locationChars = locationstxt.read()
     tempWord = ""
@@ -67,37 +71,41 @@ def getLocations():
     #        print(locations[location].get_keywords()[keyword])
 
 # Takes in the list of script words and list of locations and compares the words to the keywords to find which location matches more
-def find_ideal_locations(script, location):
-    for place in range(len(location)):
-        for keyword in range(len(location[place].get_keywords())):
-            syn_url = 'https://api.api-ninjas.com/v1/thesaurus?word={}'.format(
-                location[place].get_keywords()[keyword])
+def find_ideal_locations(script, locations):
+    for place in range(len(locations)):
+        for keyword in range(len(locations[place].get_keywords())):
+            syn_url = 'https://api.api-ninjas.com/v1/thesaurus?word={}'.format(locations[place].get_keywords()[keyword])
             response = requests.get(syn_url, headers={'X-Api-Key': secrets.token_urlsafe(16)})
             in_word = False
             tempWord = ""
-            synonyms = []
+            synonyms = [locations[place].get_keywords()[keyword]]
             char = 0
             while response.text[char] != "]":
                 if response.text[char] == "[":
                     in_word = True
-                elif response.text[char] == ",":
+                elif response.text[char] == '\"' and in_word is True:
                     synonyms.append(tempWord)
                     tempWord = ""
-                else:
+                elif response.text[char] != "," and response.text[char] != " ":
                     tempWord = tempWord + response.text[char]
                 char = char + 1
-    for word in range(len(script)):
-        for place in range(len(location)):
-                for syn in range(len(synonyms)):
-                    if response.text[syn] == location[place].get_keywords()[keyword]:
-                        location[place].add_value()
+            for syn in range(len(synonyms)):
+                for word in range(len(script)):
+                    if script[word] == synonyms[syn]:
+                        #print(locations[place].get_keywords()[keyword])
+                        locations[place].add_matchKey(locations[place].get_keywords()[keyword])
+                        locations[place].add_value()
     bestloc = ""
     topscore = 0
-    for place in range(len(location)):
-        if location[place].get_value() >= topscore:
-            topscore = location[place].get_value()
-            bestloc = location[place].get_name()
-    print(bestloc)
+    bestlocindex = 0
+    for place in range(len(locations)):
+        if locations[place].get_value() > topscore:
+            topscore = locations[place].get_value()
+            bestloc = locations[place].get_name()
+            bestlocindex = place
+    print("The most ideal location is " + bestloc + " because of the following properties:")
+    for matchKey in range(len(locations[bestlocindex].get_matchKey())):
+        print(locations[bestlocindex].get_matchKey()[matchKey])
 
 
 
