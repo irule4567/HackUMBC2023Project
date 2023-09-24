@@ -60,7 +60,8 @@ def getLocations():
             locations[locationPos].add_keyword(tempWord)
             tempWord = ""
         elif locationChars[char] == "":
-            tempWord = tempWord + locationChars[char]
+            locations[locationPos].add_keyword(tempWord)
+            tempWord = ""
         else:
             tempWord = tempWord + locationChars[char]
     return locations
@@ -89,9 +90,9 @@ def find_ideal_locations(script, locations):
                 elif response.text[char] != "," and response.text[char] != " ":
                     tempWord = tempWord + response.text[char]
                 char = char + 1
-            for syn in range(len(synonyms)):
-                for word in range(len(script)):
-                    if script[word] == synonyms[syn]:
+            for word in range(len(script)):
+                for syn in range(len(synonyms)):
+                    if synonyms[syn] == script[word]:
                         #print(locations[place].get_keywords()[keyword])
                         locations[place].add_matchKey(locations[place].get_keywords()[keyword])
                         locations[place].add_value()
